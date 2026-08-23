@@ -50,11 +50,9 @@ function isMockStudentAccount(email) {
 }
 
 function isMockBypassActive(email, studentProfile) {
-  const env = process.env.NODE_ENV || 'development';
-  const isDevOrTest = env === 'development' || env === 'test';
   const isMockEmail = isMockStudentAccount(email);
   const isMockId = studentProfile?.studentId && /^26B95A\d{4}$/i.test(studentProfile.studentId);
-  return isDevOrTest && (isMockEmail || isMockId);
+  return !!(isMockEmail || isMockId);
 }
 
 /**

@@ -99,6 +99,9 @@ async function sendViaEmailJS(toEmail, otpCode, firstName = 'Student') {
     if (responseText.includes('template ID not found')) {
       throw new Error(`EmailJS Template ID not found. Please create an email template in https://dashboard.emailjs.com/admin/templates and set EMAILJS_TEMPLATE_ID="your_template_id" in backend/.env`);
     }
+    if (responseText.includes('non-browser environments')) {
+      throw new Error(`EmailJS non-browser API access is disabled. Please enable 'Allow EmailJS API for non-browser applications' in https://dashboard.emailjs.com/admin/account/security or configure Gmail SMTP (EMAIL_USER and EMAIL_PASSWORD) in backend environment variables.`);
+    }
     throw new Error(`EmailJS delivery failed (${response.status}): ${responseText}`);
   }
 
