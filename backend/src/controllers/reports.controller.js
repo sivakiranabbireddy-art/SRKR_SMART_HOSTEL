@@ -95,7 +95,7 @@ const getSummaryReport = async (req, res, next) => {
 
     if (latestRun) {
       const scores = await prisma.compatibilityScore.findMany({
-        where: { matchingRunId: latestRun.id, hardConflict: false, score: { gte: 0 } },
+        where: { matchingRunId: latestRun.id, score: { gte: 0 } },
         select: { score: true },
       });
 
@@ -131,7 +131,7 @@ const getCompatibilityReport = async (req, res, next) => {
     }
 
     const scores = await prisma.compatibilityScore.findMany({
-      where: { matchingRunId: latestRun.id, hardConflict: false, score: { gte: 0 } },
+      where: { matchingRunId: latestRun.id, score: { gte: 0 } },
       select: { score: true },
     });
 
