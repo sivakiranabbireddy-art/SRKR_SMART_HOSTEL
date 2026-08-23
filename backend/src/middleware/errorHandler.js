@@ -25,10 +25,10 @@ const errorHandler = (err, req, res, next) => {
     return res.status(400).json({ error: err.message });
   }
 
-  // Default server error - never expose raw error to client
+  // Default server error
   const isDev = process.env.NODE_ENV === 'development';
   res.status(err.status || 500).json({
-    error: isDev ? err.message : 'An unexpected error occurred. Please try again.',
+    error: err.message || 'An unexpected error occurred. Please try again.',
     ...(isDev && { stack: err.stack }),
   });
 };

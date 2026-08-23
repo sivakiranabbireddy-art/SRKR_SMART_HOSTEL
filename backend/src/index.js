@@ -10,6 +10,26 @@ async function main() {
       try {
         await prisma.$connect();
         console.log('✅ Database connected');
+
+        // Check if database needs initial seeding
+        try {
+          const userCount = await prisma.user.count();
+          if (userCount === 0) {
+            console.log('🌱 Empty database detected. Running seed script...');
+            const bcrypt = require('bcryptjs');
+            const hash = (pwd) => bcrypt.hashSync(pwd, 12);
+            await prisma.user.createMany({
+              data: [
+                { email: 'admin@hostelsync.com', passwordHash: hash('Admin@123'), role: 'ADMIN', approvalStatus: 'APPROVED' },
+                { email: 'management@hostelsync.com', passwordHash: hash('Manage@123'), role: 'MANAGEMENT', approvalStatus: 'APPROVED' },
+                { email: 'arjun.sharma@student.com', passwordHash: hash('Student@123'), role: 'STUDENT', approvalStatus: 'APPROVED' },
+              ],
+            });
+            console.log('✅ Default Admin, Management, and Student accounts created successfully!');
+          }
+        } catch (seedErr) {
+          console.warn('⚠️ Auto-seed check notice:', seedErr.message);
+        }
       } catch (dbErr) {
         console.warn('⚠️ Remote database connection warning:', dbErr.message);
       }
