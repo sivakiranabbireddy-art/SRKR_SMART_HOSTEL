@@ -35,19 +35,45 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get(['/health', '/api/health'], (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), version: '1.0.0' });
 });
 
-// API Routes
+// API Routes (mounted with and without /api prefix for backward compatibility)
 app.use('/api/auth', authRoutes);
-app.use('/api/students', studentRoutes);
-app.use('/api/preferences', preferenceRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/management', managementRoutes);
+app.use('/auth', authRoutes);
 
-// 404 handler
+app.use('/api/students', studentRoutes);
+app.use('/students', studentRoutes);
+
+app.use('/api/preferences', preferenceRoutes);
+app.use('/preferences', preferenceRoutes);
+
+app.use('/api/admin', adminRoutes);
+app.use('/admin', adminRoutes);
+
+app.use('/api/reports', reportRoutes);
+app.use('/reports', reportRoutes);
+
+app.use('/api/management', managementRoutes);
+app.use('/management', managementRoutes);
+
+// Static frontend files (if built in monorepo/fullstack deploy)
+const path = require('path');
+const fs = require('fs');
+const frontendDist = path.resolve(__dirname, '../../frontend/dist');
+
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
+
+// 404 handler for unmatched routes
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
