@@ -299,6 +299,51 @@ export default function LoginPage() {
                   </>
                 )}
               </button>
+
+              {/* Quick Demo Fill Buttons */}
+              <div className="pt-3 border-t border-slate-100">
+                <p className="text-xs font-semibold text-slate-500 mb-2 text-center">Quick Demo Login:</p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm({ email: 'admin@hostelsync.com', password: 'Admin@123' });
+                      setErrorMsg('');
+                    }}
+                    className="px-2 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-colors text-center"
+                  >
+                    👑 Admin
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm({ email: 'arjun.sharma@student.com', password: 'Student@123' });
+                      setErrorMsg('');
+                    }}
+                    className="px-2 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-colors text-center"
+                  >
+                    🎓 Student
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm({ email: 'management@hostelsync.com', password: 'Manage@123' });
+                      setErrorMsg('');
+                    }}
+                    className="px-2 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-colors text-center"
+                  >
+                    🏢 Warden
+                  </button>
+                </div>
+              </div>
+
+              {/* Register Link */}
+              <p className="text-center text-xs text-slate-500 pt-2">
+                Don't have an account yet?{' '}
+                <Link to="/register" className="font-semibold text-brand-600 hover:text-brand-700 hover:underline">
+                  Create an account
+                </Link>
+              </p>
             </motion.form>
           ) : (
             <motion.div
@@ -327,6 +372,11 @@ export default function LoginPage() {
                   <p className="text-brand-700 mt-0.5 break-all">
                     Code sent to <span className="font-bold">{form.email}</span>
                   </p>
+                  {form.email.includes('hostelsync.com') || form.email.includes('student.com') ? (
+                    <p className="text-emerald-700 font-medium mt-1 bg-emerald-50 py-0.5 px-1.5 rounded border border-emerald-200 inline-block">
+                      💡 Demo Account OTP: <strong>123456</strong>
+                    </p>
+                  ) : null}
                 </div>
               </div>
 
