@@ -14,18 +14,34 @@ export function QuestionnaireDeadlineManager({ onUpdate }) {
 
   const fetchSettings = async () => {
     try {
-      const { data } = await api.get('/admin/questionnaire-settings');
-      if (data?.settings) {
-        const s = data.settings;
-        setIsOpen(s.questionnaireOpen ?? true);
-        setStatus(s.status || 'OPEN');
-        setServerTime(s.serverTime);
-        if (s.questionnaireDeadline) {
-          // Format ISO date string for datetime-local input (YYYY-MM-THH:mm)
-          const d = new Date(s.questionnaireDeadline);
-          const tzOffset = d.getTimezoneOffset() * 60000;
-          const localISOTime = (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 16);
-          setDeadline(localISOTime);
+      const response = await api.get('/admin/questionnaire-settings');
+      const data = response?.data;
+      
+      // Support response.data, response.data.settings, or response.data.data
+      const s = data?.settings ?? data?.data ?? data;
+      
+      if (s && typeof s === 'object') {
+        const rawIsOpen = s.questionnaireOpen ?? s.isOpen ?? true;
+        const rawDeadline = s.questionnaireDeadline ?? s.deadline ?? null;
+        const rawStatus = s.status || (rawIsOpen ? 'OPEN' : 'CLOSED');
+        
+        setIsOpen(Boolean(rawIsOpen));
+        setStatus(rawStatus);
+        setServerTime(s.serverTime || null);
+        
+        if (rawDeadline) {
+          try {
+            const d = new Date(rawDeadline);
+            if (!isNaN(d.getTime())) {
+              const tzOffset = d.getTimezoneOffset() * 60000;
+              const localISOTime = (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 16);
+              setDeadline(localISOTime);
+            } else {
+              setDeadline('');
+            }
+          } catch {
+            setDeadline('');
+          }
         } else {
           setDeadline('');
         }
@@ -48,10 +64,16 @@ export function QuestionnaireDeadlineManager({ onUpdate }) {
         questionnaireOpen: isOpen,
         questionnaireDeadline: deadline ? new Date(deadline).toISOString() : null,
       };
-      const { data } = await api.put('/admin/questionnaire-settings', payload);
+      const response = await api.put('/admin/questionnaire-settings', payload);
+      const data = response?.data;
       toast({ type: 'success', title: 'Questionnaire deadline updated successfully' });
-      if (data?.settings) {
-        setStatus(data.settings.status);
+      
+      const s = data?.settings ?? data?.data ?? data;
+      if (s && typeof s === 'object') {
+        const rawIsOpen = s.questionnaireOpen ?? s.isOpen ?? isOpen;
+        const rawStatus = s.status || (rawIsOpen ? 'OPEN' : 'CLOSED');
+        setStatus(rawStatus);
+        setIsOpen(Boolean(rawIsOpen));
       }
       if (onUpdate) onUpdate();
     } catch (error) {
@@ -61,15 +83,22 @@ export function QuestionnaireDeadlineManager({ onUpdate }) {
     }
   };
 
-  const formattedDeadlineIST = deadline ? new Date(deadline).toLocaleString('en-IN', {
-    timeZone: 'Asia/Kolkata',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  }) : 'No deadline set';
+  const formattedDeadlineIST = deadline ? (() => {
+    try {
+      const d = new Date(deadline);
+      return !isNaN(d.getTime()) ? d.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }) : 'No deadline set';
+    } catch {
+      return 'No deadline set';
+    }
+  })() : 'No deadline set';
 
   if (loading) {
     return (

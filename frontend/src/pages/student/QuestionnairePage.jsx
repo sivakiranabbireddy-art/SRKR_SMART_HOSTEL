@@ -490,32 +490,41 @@ export default function QuestionnairePage() {
 
   const fetchDeadline = () => {
     api.get('/preferences/deadline').then(({ data }) => {
-      setDeadlineInfo(data);
+      const info = data?.settings ?? data?.data ?? data ?? null;
+      setDeadlineInfo(info);
     }).catch(() => {});
   };
 
   useEffect(() => {
     fetchDeadline();
     api.get('/preferences/me').then(({ data }) => {
-      if (data.preference) setPrefs({ ...defaultPrefs, ...data.preference });
+      const prefData = data?.preference ?? data?.data ?? data;
+      if (prefData && typeof prefData === 'object') setPrefs({ ...defaultPrefs, ...prefData });
     }).catch((err) => {
       console.error('Failed to load preferences:', err.response?.data || err.message);
     }).finally(() => setLoading(false));
   }, []);
 
+  const rawDeadline = deadlineInfo?.deadline ?? deadlineInfo?.questionnaireDeadline ?? null;
+  const isOpen = deadlineInfo?.isOpen ?? deadlineInfo?.questionnaireOpen ?? true;
+
   // Ticking countdown timer for remaining time
   useEffect(() => {
-    if (!deadlineInfo?.deadline) {
+    if (!rawDeadline) {
       setRemainingText('');
       return;
     }
 
     const updateTimer = () => {
-      const targetTime = new Date(deadlineInfo.deadline).getTime();
+      const targetTime = new Date(rawDeadline).getTime();
+      if (isNaN(targetTime)) {
+        setRemainingText('');
+        return;
+      }
       const now = Date.now();
       const diff = targetTime - now;
 
-      if (diff <= 0 || !deadlineInfo.isOpen) {
+      if (diff <= 0 || !isOpen) {
         setRemainingText('Deadline passed');
         return;
       }
@@ -537,20 +546,30 @@ export default function QuestionnairePage() {
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [deadlineInfo]);
+  }, [rawDeadline, isOpen]);
 
-  const isExpired = deadlineInfo?.deadline ? new Date().getTime() >= new Date(deadlineInfo.deadline).getTime() : false;
-  const isFormLocked = deadlineInfo ? (!deadlineInfo.isOpen || isExpired) : false;
+  const isExpired = rawDeadline ? (() => {
+    const t = new Date(rawDeadline).getTime();
+    return !isNaN(t) ? Date.now() >= t : false;
+  })() : false;
+  const isFormLocked = deadlineInfo ? (!isOpen || isExpired) : false;
 
-  const formattedDeadlineIST = deadlineInfo?.deadline ? new Date(deadlineInfo.deadline).toLocaleString('en-IN', {
-    timeZone: 'Asia/Kolkata',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  }) : null;
+  const formattedDeadlineIST = rawDeadline ? (() => {
+    try {
+      const d = new Date(rawDeadline);
+      return !isNaN(d.getTime()) ? d.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }) : null;
+    } catch {
+      return null;
+    }
+  })() : null;
 
   const set = (field) => (value) => {
     if (isFormLocked) return;

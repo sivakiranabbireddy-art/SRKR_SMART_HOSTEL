@@ -16,12 +16,22 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     Promise.all([
-      api.get('/admin/dashboard'),
-      api.get('/reports/compatibility'),
+      api.get('/admin/dashboard').catch(err => {
+        console.error('Failed to load admin dashboard stats:', err);
+        return { data: null };
+      }),
+      api.get('/reports/compatibility').catch(err => {
+        console.error('Failed to load compatibility report:', err);
+        return { data: null };
+      }),
     ]).then(([s, c]) => {
-      setStats(s.data);
-      setCompatReport(c.data);
-    }).catch(() => {}).finally(() => setLoading(false));
+      const statsData = s?.data?.stats ?? s?.data?.data ?? s?.data ?? null;
+      const compatData = c?.data?.report ?? c?.data?.data ?? c?.data ?? null;
+      if (statsData) setStats(statsData);
+      if (compatData) setCompatReport(compatData);
+    }).catch(err => {
+      console.error('Admin dashboard error:', err);
+    }).finally(() => setLoading(false));
   }, []);
 
   if (loading) return <DashboardLayout><LoadingSpinner /></DashboardLayout>;

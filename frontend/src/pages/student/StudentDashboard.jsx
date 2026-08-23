@@ -22,9 +22,12 @@ export default function StudentDashboard() {
       api.get('/students/me/room').catch(() => ({ data: { allocation: null } })),
       api.get('/preferences/me').catch(() => ({ data: { preference: null } })),
     ]).then(([m, r, p]) => {
-      setMatches(m.data.matches?.slice(0, 5) || []);
-      setRoom(r.data.allocation);
-      setPref(p.data.preference);
+      const matchData = m?.data?.matches ?? m?.data?.data ?? m?.data ?? [];
+      const roomData = r?.data?.allocation ?? r?.data?.data ?? r?.data ?? null;
+      const prefData = p?.data?.preference ?? p?.data?.data ?? p?.data ?? null;
+      setMatches(Array.isArray(matchData) ? matchData.slice(0, 5) : []);
+      setRoom(roomData);
+      setPref(prefData);
     }).finally(() => setLoading(false));
   }, []);
 
